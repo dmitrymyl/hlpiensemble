@@ -1,4 +1,0 @@
-Args <- commandArgs(TRUE)
-print("Args test")
-print(Args[1])
-print(Args[5])
