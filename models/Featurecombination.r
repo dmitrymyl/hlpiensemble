@@ -1,6 +1,6 @@
 Args<-commandArgs(TRUE)
 taskid<-Args[1]
-setwd(paste0("/var/www/html/hlpiensemble/task/",taskid,"/"))
+setwd(paste0("./task/",taskid,"/"))
 library(dplyr)
 #ncRNA特征类型向量
 ncRNAFeatureClassNameList <- c("kmer","DAC","PC-PseDNC-General")

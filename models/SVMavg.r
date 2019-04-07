@@ -2,7 +2,7 @@
 Args<-commandArgs(TRUE)
 taskid<-Args[1]
 #设置工作目录
-setwd(paste0("/var/www/html/hlpiensemble/task/",taskid,"/"))
+setwd(paste0("./task/",taskid,"/"))
 #读取数据
 kmer_kmer<-read.csv("data_lncRNAkmer_proteinkmer.csv")
 kmer_AC<-read.csv("data_lncRNAkmer_proteinAC.csv")
@@ -25,7 +25,8 @@ PCPseDNCGeneral_AC<-PCPseDNCGeneral_AC[,c(-1,-2,-3)]
 PCPseDNCGeneral_PseAACGeneral<-PCPseDNCGeneral_PseAACGeneral[,c(-1,-2,-3)]
 
 library(caret)
-load(file="/var/www/html/hlpiensemble/models/FinalSVM.Rdata")
+library(kernlab)
+load(file="../../models/FinalSVM.Rdata")
 
 #kmer_kmer.pred.raw <- predict(kmer_kmer.Fit, newdata=kmer_kmer, type = "raw")
 kmer_kmer.pred.prob <- predict(kmer_kmer.Fit, newdata=kmer_kmer, type = "prob")

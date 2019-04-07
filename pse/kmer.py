@@ -3,6 +3,7 @@ __author__ = 'Fule Liu'
 import sys
 import re
 import time
+import os
 
 from util import frequency
 from util import get_data

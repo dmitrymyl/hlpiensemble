@@ -3,6 +3,8 @@ __author__ = 'Fule Liu'
 import time
 
 import const
+import os
+import sys
 from util import get_data, check_args, read_k
 from pse import get_phyche_list, get_extra_index, get_phyche_value, get_aaindex, extend_aaindex, AAIndex
 from data import index_list

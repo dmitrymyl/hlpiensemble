@@ -271,11 +271,12 @@ def write_tab(_vecs, write_file):
 def write_csv(_vecs, write_file):
     """Write the vectors into disk in csv format."""
     import csv
-    with open(write_file, 'wb') as csvfile:
+    with open(write_file, 'w') as csvfile:
         spamwriter = csv.writer(csvfile, delimiter=',',
                                 quotechar='|', quoting=csv.QUOTE_MINIMAL)
-        for vec in _vecs:
-            spamwriter.writerow(vec)
+        #for vec in _vecs:
+        #    spamwriter.writerow(vec)
+        spamwriter.writerows(_vecs)
 
 
 def convert_phyche_index_to_dict(phyche_index, alphabet):
