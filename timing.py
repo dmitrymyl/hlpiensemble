@@ -1,8 +1,13 @@
 #python3.6
 #coding:utf-8
-import argparse
+import subprocess
+import time
 import sys
-from subprocess import run, PIPE
+
+
+def timelog(msg, file):
+    with open(file, 'a') as timefile:
+        timefile.write(str(msg))
 
 
 def geneErrorLog(msg):
@@ -121,21 +126,30 @@ def geneDownloadfile(SVMresultlist, RFresultlist, XGBresultlist):
     resultfile.close()
 
 
-parser = argparse.ArgumentParser(description='Performs prediction of RNA-protein interactions.')
-parser.add_argument('-taskid', nargs='?', type=str, dest='taskid', help='task id')
-parser.add_argument('-cores', nargs='?', type=int, default=1, dest='cores', help='number of cores to use')
-args = parser.parse_args()
 wd = "./task/"
 psewd = "./pse/"
-taskid = args.taskid
+taskid = str(sys.argv[1])
 wd += taskid + "/"
+timefile = wd + 'timelog.tsv'
 try:
-    run(f"python kmer.py .{wd}lncRNAseq.fasta .{wd}lncRNAFeature_kmer.csv RNA -k 2 -f csv",
-        shell=True, stdin=PIPE, stdout=PIPE, cwd=psewd)
-    run(f"python acc.py .{wd}lncRNAseq.fasta .{wd}lncRNAFeature_DAC.csv RNA DAC -lag 2 -all_index -f csv",
-        shell=True, stdin=PIPE, stdout=PIPE, cwd=psewd)
-    run(f"python pse.py .{wd}lncRNAseq.fasta .{wd}lncRNAFeature_PC-PseDNC-General.csv RNA PC-PseDNC-General -all_index -f csv",
-        shell=True, stdin=PIPE, stdout=PIPE, cwd=psewd)
+    kmer = f"python kmer.py .{wd}lncRNAseq.fasta .{wd}lncRNAFeature_kmer.csv RNA -k 2 -f csv"
+    acc = f"python acc.py .{wd}lncRNAseq.fasta .{wd}lncRNAFeature_DAC.csv RNA DAC -lag 2 -all_index -f csv"
+    pse = f"python pse.py .{wd}lncRNAseq.fasta .{wd}lncRNAFeature_PC-PseDNC-General.csv RNA PC-PseDNC-General -all_index -f csv"
+    child = subprocess.Popen(kmer, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=psewd)
+    start = time.time()
+    child.communicate()
+    end = time.time()
+    timelog(f"RNA:kmer:{end - start}\n", timefile)
+    child = subprocess.Popen(acc, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=psewd)
+    start = time.time()
+    child.communicate()
+    end = time.time()
+    timelog(f"RNA:acc:{end - start}\n", timefile)
+    child = subprocess.Popen(pse, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=psewd)
+    start = time.time()
+    child.communicate()
+    end = time.time()
+    timelog(f"RNA:pse:{end - start}\n", timefile)
 except BaseException:
     geneErrorLog("An error occurred while generating the lncRNA features.#1 %s")
     sys.exit(0)
@@ -151,12 +165,24 @@ except BaseException:
     sys.exit(0)
 taskprogress(15)
 try:
-    run(f"python kmer.py .{wd}proteinseq.fasta .{wd}proteinFeature_kmer.csv Protein -k 2 -f csv",
-        shell=True, stdin=PIPE, stdout=PIPE, cwd=psewd)
-    run(f"python acc.py .{wd}proteinseq.fasta .{wd}proteinFeature_AC.csv Protein AC -lag 2 -all_index -f csv",
-        shell=True, stdin=PIPE, stdout=PIPE, cwd=psewd)
-    run(f"python pse.py .{wd}proteinseq.fasta .{wd}proteinFeature_PC-PseAAC-General.csv Protein PC-PseAAC-General -all_index -f csv",
-        shell=True, stdin=PIPE, stdout=PIPE, cwd=psewd)
+    kmer = f"python kmer.py .{wd}proteinseq.fasta .{wd}proteinFeature_kmer.csv Protein -k 2 -f csv"
+    acc = f"python acc.py .{wd}proteinseq.fasta .{wd}proteinFeature_AC.csv Protein AC -lag 2 -all_index -f csv"
+    pse = f"python pse.py .{wd}proteinseq.fasta .{wd}proteinFeature_PC-PseAAC-General.csv Protein PC-PseAAC-General -all_index -f csv"
+    child = subprocess.Popen(kmer, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=psewd)
+    start = time.time()
+    child.communicate()
+    end = time.time()
+    timelog(f"protein:kmer:{end - start}\n", timefile)
+    child = subprocess.Popen(acc, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=psewd)
+    start = time.time()
+    child.communicate()
+    end = time.time()
+    timelog(f"protein:acc:{end - start}\n", timefile)
+    child = subprocess.Popen(pse, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=psewd)
+    start = time.time()
+    child.communicate()
+    end = time.time()
+    timelog(f"protein:pse:{end - start}\n", timefile)
 except BaseException:
     geneErrorLog("An error occurred while generating the protein features.#1")
     sys.exit(0)
@@ -197,25 +223,45 @@ pairsfile.write(pairstext)
 pairsfile.close()
 taskprogress(50)
 try:
-    run(f"Rscript ./models/Featurecombination.r {taskid} {args.cores}", shell=True, stdin=PIPE, stdout=PIPE)
+    fc = "Rscript ./models/Featurecombination.r " + taskid # checked
+    child = subprocess.Popen(fc, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    start = time.time()
+    child.communicate()
+    end = time.time()
+    timelog(f"predict:featurecombination:{end - start}\n", timefile)
 except BaseException:
     geneErrorLog("An error occurred while generating the feature combination.")
     sys.exit(0)
 taskprogress(55)
 try:
-    run(f"Rscript ./models/SVMavg.r {taskid} {args.cores}", shell=True, stdin=PIPE, stdout=PIPE)
+    fc = "Rscript ./models/SVMavg.r " + taskid # checked
+    child = subprocess.Popen(fc, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    start = time.time()
+    child.communicate()
+    end = time.time()
+    timelog(f"predict:svm:{end - start}\n", timefile)
 except BaseException:
     geneErrorLog("The error occurred when using the Support Vector Machines Ensemble model.")
     sys.exit(0)
 taskprogress(70)
 try:
-    run(f"Rscript ./models/RFavg.r {taskid} {args.cores}", shell=True, stdin=PIPE, stdout=PIPE)
+    fc = "Rscript ./models/RFavg.r " + taskid # checked
+    child = subprocess.Popen(fc, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    start = time.time()
+    child.communicate()
+    end = time.time()
+    timelog(f"predict:rf:{end - start}\n", timefile)
 except BaseException:
     geneErrorLog("The error occurred when using the Random Forest Ensemble model.")
     sys.exit(0)
 taskprogress(85)
 try:
-    run(f"Rscript ./models/XGBavg.r {taskid} {args.cores}", shell=True, stdin=PIPE, stdout=PIPE)
+    fc = "Rscript ./models/XGBavg.r " + taskid # checked
+    child = subprocess.Popen(fc, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    start = time.time()
+    child.communicate()
+    end = time.time()
+    timelog(f"predict:xgb:{end - start}\n", timefile)
 except BaseException:
     geneErrorLog("The error occurred when using the XGBoost Ensemble model.")
     sys.exit(0)

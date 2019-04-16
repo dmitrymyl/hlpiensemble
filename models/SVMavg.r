@@ -1,6 +1,7 @@
 #获取参数
 Args<-commandArgs(TRUE)
 taskid<-Args[1]
+cores <- as.integer(Args[2])
 #设置工作目录
 setwd(paste0("./task/",taskid,"/"))
 #读取数据
@@ -26,6 +27,11 @@ PCPseDNCGeneral_PseAACGeneral<-PCPseDNCGeneral_PseAACGeneral[,c(-1,-2,-3)]
 
 library(caret)
 library(kernlab)
+if (cores > 1) {
+    library(doParallel)
+    cl <- makePSOCKcluster(cores)
+    registerDoParallel(cl)
+}
 load(file="../../models/FinalSVM.Rdata")
 
 #kmer_kmer.pred.raw <- predict(kmer_kmer.Fit, newdata=kmer_kmer, type = "raw")
@@ -47,6 +53,9 @@ PCPseDNCGeneral_AC.pred.prob <- predict(PCPseDNCGeneral_AC.Fit, newdata=PCPseDNC
 #PCPseDNCGeneral_PseAACGeneral.pred.raw <- predict(PCPseDNCGeneral_PseAACGeneral.Fit, newdata=PCPseDNCGeneral_PseAACGeneral, type = "raw")
 PCPseDNCGeneral_PseAACGeneral.pred.prob <- predict(PCPseDNCGeneral_PseAACGeneral.Fit, newdata=PCPseDNCGeneral_PseAACGeneral, type = "prob")
 
+if (cores > 1) {
+    stopCluster(cl)
+}
 #平均策略预测
 avg.pred.prob.P<-(kmer_kmer.pred.prob$P+kmer_AC.pred.prob$P+kmer_PseAACGeneral.pred.prob$P+DAC_kmer.pred.prob$P+DAC_AC.pred.prob$P+DAC_PseAACGeneral.pred.prob$P+PCPseDNCGeneral_kmer.pred.prob$P+PCPseDNCGeneral_AC.pred.prob$P+PCPseDNCGeneral_PseAACGeneral.pred.prob$P)/9.0
 kmer_kmer<-read.csv("data_lncRNAkmer_proteinkmer.csv")

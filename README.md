@@ -12,4 +12,5 @@ R::caret | 6.0.82
 R::randomForest | 4.6.14
 R::xgboost | 0.82.1
 R::kernlab | 0.9.26
- 
+
+## How to use it 
