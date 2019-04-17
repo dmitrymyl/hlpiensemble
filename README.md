@@ -12,7 +12,8 @@ R::caret | 6.0.82
 R::randomForest | 4.6.14
 R::xgboost | 0.82.1
 R::kernlab | 0.9.26
-<<<<<<< HEAD
+
+Currently, the package works only under UNIX.
 
 ## How to use it 
 =======
@@ -32,6 +33,7 @@ argument|type|description|default
 -mode|optional|Mode of output. If "result", will produce a .csv file. If "full", will produce a directory with all intermediate files.|result
 -output|mandatory|Name of the output file/directory.|None
 -taskname|optional|Name of task|some_task
+-cores|optional|Number of cores to use for prediction|1
 
 ## How predictions are made
 The training dataset was NPInter v2.0 database of lncRNA-protein interactions. Several features are excluded from sequences and then applied to
@@ -50,7 +52,3 @@ The initial author Fule Liu developed most of the prediction backend. [@dmitrymy
 
 ## Citation
 Please cite **Huan Hu, Li Zhang, Haixin Ai, Hui Zhang, Yetian Fan, Qi Zhao & Hongsheng Liu (2018) HLPI-Ensemble: Prediction of human lncRNA-protein interactions based on ensemble strategy, RNA Biology, 15:6, 797-806, DOI: 10.1080/15476286.2018.1457935** in your paper if you use this software.
-
-## Plans
-1. Add parallel processing of underlying R scripts for enhanced performance on multiple sequences.
->>>>>>> d4e43c180da2dd252d39ebafcd4871eb96d311b4
