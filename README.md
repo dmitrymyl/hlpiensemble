@@ -14,9 +14,6 @@ R::xgboost | 0.82.1
 R::kernlab | 0.9.26
 
 Currently, the package works only under UNIX.
-
-## How to use it 
-=======
  
 ## Usage
 The master script is `hlpiensemble.py` that allows one to run prediction from any directory. For instance, in UNIX one should do as follows:
@@ -34,6 +31,7 @@ argument|type|description|default
 -output|mandatory|Name of the output file/directory.|None
 -taskname|optional|Name of task|some_task
 -cores|optional|Number of cores to use for prediction|1
+--timing|optional|Whether to profile execution time or not|False
 
 ## How predictions are made
 The training dataset was NPInter v2.0 database of lncRNA-protein interactions. Several features are excluded from sequences and then applied to

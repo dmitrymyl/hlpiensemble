@@ -1,8 +1,9 @@
-#python3.6
-#coding:utf-8
+# python3.6
+# coding:utf-8
 import argparse
 import sys
 from subprocess import run, PIPE
+from time import time
 
 
 def geneErrorLog(msg):
@@ -29,30 +30,27 @@ def getNameListBySeq(fastafilepath):
 
 
 def setName4Featurecsv(NameList, csvfilepath):
-    csvfile = open(csvfilepath, "r")
-    csvfilelines = csvfile.readlines()
-    lines = []
-    for line in csvfilelines:
-        lines.append(line)
-    csvfile.close()
+    with open(csvfilepath, "r") as csvfile:
+        csvfilelines = csvfile.readlines()
+        lines = []
+        for line in csvfilelines:
+            lines.append(line)
     no = len(NameList)
     csvfilenewcont = ""
     for i in range(no):
         templine = NameList[i] + "," + lines[i]
         csvfilenewcont += templine
-    csvfile = open(csvfilepath, "w")
-    csvfile.write(csvfilenewcont)
-    csvfile.close()
+    with open(csvfilepath, "w") as csvfile:
+        csvfile.write(csvfilenewcont)
 
 
 def csv2list(csvfilepath):
-    csvfile = open(csvfilepath)
-    csvfilelines = csvfile.readlines()
-    lines = []
-    for line in csvfilelines:
-        lines.append(line)
-    lines = lines[1:]
-    csvfile.close()
+    with open(csvfilepath) as csvfile:
+        csvfilelines = csvfile.readlines()
+        lines = []
+        for line in csvfilelines:
+            lines.append(line)
+        lines = lines[1:]
     resultlist = []
     for line in lines:
         templist = str(line).replace("\r", "").replace("\n", "").replace('"', '').split(",")
@@ -86,13 +84,11 @@ def formatresult2html(SVMresultlist, RFresultlist, XGBresultlist):
         tablecont += line
     table = tableheader + tablecont + tabletail
     htmlfilepath = wd + "result.html"
-    htmlcont = table
-    htmlfile = open(htmlfilepath, "w")
-    htmlfile.write(htmlcont)
-    htmlfile.close()
+    with open(htmlfilepath, "w") as htmlfile:
+        htmlfile.write(table)
 
 
-def geneDownloadfile(SVMresultlist, RFresultlist, XGBresultlist):
+def geneDownloadfile(SVMresultlist, RFresultlist, XGBresultlist, threshold=0.8):
     no = len(SVMresultlist)
     tablecont = ""
     tableheader = "lncRNA,protein,HLPI-SVM Ensemble,HLPI-RF Ensemble,HLPI-XGB Ensemble,Comprehensive evaluation\n"
@@ -101,13 +97,13 @@ def geneDownloadfile(SVMresultlist, RFresultlist, XGBresultlist):
         rfprob = str("%.4f" % float(RFresultlist[i]["prob"]))
         xgbprob = str("%.4f" % float(XGBresultlist[i]["prob"]))
         evaluation = "No significant interaction"
-        if (float(xgbprob)>=0.8):
-            if (float(rfprob)<=0.8 and float(svmprob)<=0.8):
+        if (float(xgbprob) >= threshold):
+            if (float(rfprob) <= threshold and float(svmprob) <= threshold):
                 evaluation = "No significant interaction"
             else:
                 evaluation = "Interaction"
         else:
-            if (float(rfprob)>0.8 and float(svmprob)>0.8):
+            if (float(rfprob) > threshold and float(svmprob) > threshold):
                 evaluation = "Interaction"
             else:
                 evaluation = "No significant interaction"
@@ -116,26 +112,45 @@ def geneDownloadfile(SVMresultlist, RFresultlist, XGBresultlist):
     table = tableheader + tablecont
     filepath = wd + "HLPI-Ensemble.csv"
     filecont = table
-    resultfile = open(filepath, "w")
-    resultfile.write(filecont)
-    resultfile.close()
+    with open(filepath, "w") as resultfile:
+        resultfile.write(filecont)
 
 
-parser = argparse.ArgumentParser(description='Performs prediction of RNA-protein interactions.')
+def timelog(msg, file, mode=False):
+    if mode:
+        with open(file, 'a') as timefile:
+            timefile.write(str(msg))
+
+
+def time_func(func, *args, **kwargs):
+    start = time()
+    result = func(*args, **kwargs)
+    end = time()
+    timing = end - start
+    return result, timing
+
+
+parser = argparse.ArgumentParser(description='Performs prediction of RNA-protein interactions.',
+                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('-taskid', nargs='?', type=str, dest='taskid', help='task id')
 parser.add_argument('-cores', nargs='?', type=int, default=1, dest='cores', help='number of cores to use')
+parser.add_argument('--timing', action='store_true', dest='timing', help='whether to profile the execution time or not')
 args = parser.parse_args()
 wd = "./task/"
 psewd = "./pse/"
 taskid = args.taskid
 wd += taskid + "/"
+timefile = wd + 'timelog.tsv'
 try:
-    run(f"python kmer.py .{wd}lncRNAseq.fasta .{wd}lncRNAFeature_kmer.csv RNA -k 2 -f csv",
-        shell=True, stdin=PIPE, stdout=PIPE, cwd=psewd)
-    run(f"python acc.py .{wd}lncRNAseq.fasta .{wd}lncRNAFeature_DAC.csv RNA DAC -lag 2 -all_index -f csv",
-        shell=True, stdin=PIPE, stdout=PIPE, cwd=psewd)
-    run(f"python pse.py .{wd}lncRNAseq.fasta .{wd}lncRNAFeature_PC-PseDNC-General.csv RNA PC-PseDNC-General -all_index -f csv",
-        shell=True, stdin=PIPE, stdout=PIPE, cwd=psewd)
+    result, timing = time_func(run, f"python kmer.py .{wd}lncRNAseq.fasta .{wd}lncRNAFeature_kmer.csv RNA -k 2 -f csv",
+                               shell=True, stdin=PIPE, stdout=PIPE, cwd=psewd)
+    timelog(f"RNA:kmer:{timing}\n", timefile, mode=args.timing)
+    result, timing = time_func(run, f"python acc.py .{wd}lncRNAseq.fasta .{wd}lncRNAFeature_DAC.csv RNA DAC -lag 2 -all_index -f csv",
+                               shell=True, stdin=PIPE, stdout=PIPE, cwd=psewd)
+    timelog(f"RNA:acc:{timing}\n", timefile, mode=args.timing)
+    result, timing = time_func(run, f"python pse.py .{wd}lncRNAseq.fasta .{wd}lncRNAFeature_PC-PseDNC-General.csv RNA PC-PseDNC-General -all_index -f csv",
+                               shell=True, stdin=PIPE, stdout=PIPE, cwd=psewd)
+    timelog(f"RNA:pse:{timing}\n", timefile, mode=args.timing)
 except BaseException:
     geneErrorLog("An error occurred while generating the lncRNA features.#1 %s")
     sys.exit(0)
@@ -151,12 +166,15 @@ except BaseException:
     sys.exit(0)
 taskprogress(15)
 try:
-    run(f"python kmer.py .{wd}proteinseq.fasta .{wd}proteinFeature_kmer.csv Protein -k 2 -f csv",
-        shell=True, stdin=PIPE, stdout=PIPE, cwd=psewd)
-    run(f"python acc.py .{wd}proteinseq.fasta .{wd}proteinFeature_AC.csv Protein AC -lag 2 -all_index -f csv",
-        shell=True, stdin=PIPE, stdout=PIPE, cwd=psewd)
-    run(f"python pse.py .{wd}proteinseq.fasta .{wd}proteinFeature_PC-PseAAC-General.csv Protein PC-PseAAC-General -all_index -f csv",
-        shell=True, stdin=PIPE, stdout=PIPE, cwd=psewd)
+    result, timing = time_func(run, f"python kmer.py .{wd}proteinseq.fasta .{wd}proteinFeature_kmer.csv Protein -k 2 -f csv",
+                               shell=True, stdin=PIPE, stdout=PIPE, cwd=psewd)
+    timelog(f"protein:kmer:{timing}\n", timefile, mode=args.timing)
+    result, timing = time_func(run, f"python acc.py .{wd}proteinseq.fasta .{wd}proteinFeature_AC.csv Protein AC -lag 2 -all_index -f csv",
+                               shell=True, stdin=PIPE, stdout=PIPE, cwd=psewd)
+    timelog(f"protein:acc:{timing}\n", timefile, mode=args.timing)
+    result, timing = time_func(run, f"python pse.py .{wd}proteinseq.fasta .{wd}proteinFeature_PC-PseAAC-General.csv Protein PC-PseAAC-General -all_index -f csv",
+                               shell=True, stdin=PIPE, stdout=PIPE, cwd=psewd)
+    timelog(f"protein:pse:{timing}\n", timefile, mode=args.timing)
 except BaseException:
     geneErrorLog("An error occurred while generating the protein features.#1")
     sys.exit(0)
@@ -175,53 +193,52 @@ lncRNANameListfilepath = wd + "lncRNANameList.csv"
 lncRNANameListfilecont = ""
 for lncRNAName in lncRNAseqNameList:
     lncRNANameListfilecont += lncRNAName + "\n"
-lncRNANameListfile = open(lncRNANameListfilepath, "w")
-lncRNANameListfile.write(lncRNANameListfilecont)
-lncRNANameListfile.close()
+with open(lncRNANameListfilepath, "w") as lncRNANameListfile:
+    lncRNANameListfile.write(lncRNANameListfilecont)
 taskprogress(40)
 proteinNameListfilepath = wd + "proteinNameList.csv"
 proteinNameListfilecont = ""
 for proteinName in proteinseqNameList:
     proteinNameListfilecont += proteinName + "\n"
-proteinNameListfile = open(proteinNameListfilepath, "w")
-proteinNameListfile.write(proteinNameListfilecont)
-proteinNameListfile.close()
+with open(proteinNameListfilepath, "w") as proteinNameListfile:
+    proteinNameListfile.write(proteinNameListfilecont)
 taskprogress(45)
 pairsfilepath = wd + "pairs.csv"
 pairstext = "ncRNA,protein\n"
 for lncRNAName in lncRNAseqNameList:
     for proteinName in proteinseqNameList:
         pairstext += lncRNAName + "," + proteinName + "\n"
-pairsfile = open(pairsfilepath, "w")
-pairsfile.write(pairstext)
-pairsfile.close()
+with open(pairsfilepath, "w") as pairsfile:
+    pairsfile.write(pairstext)
 taskprogress(50)
 try:
-    run(f"Rscript ./models/Featurecombination.r {taskid} {args.cores}", shell=True, stdin=PIPE, stdout=PIPE)
+    result, timing = time_func(run, f"Rscript ./models/Featurecombination.r {taskid} {args.cores}", shell=True, stdin=PIPE, stdout=PIPE)
+    timelog(f"predict:featurecombination:{timing}\n", timefile, mode=args.timing)
 except BaseException:
     geneErrorLog("An error occurred while generating the feature combination.")
     sys.exit(0)
 taskprogress(55)
 try:
-    run(f"Rscript ./models/SVMavg.r {taskid} {args.cores}", shell=True, stdin=PIPE, stdout=PIPE)
+    result, timing = time_func(run, f"Rscript ./models/SVMavg.r {taskid} {args.cores}", shell=True, stdin=PIPE, stdout=PIPE)
+    timelog(f"predict:svm:{timing}\n", timefile, mode=args.timing)
 except BaseException:
     geneErrorLog("The error occurred when using the Support Vector Machines Ensemble model.")
     sys.exit(0)
 taskprogress(70)
 try:
-    run(f"Rscript ./models/RFavg.r {taskid} {args.cores}", shell=True, stdin=PIPE, stdout=PIPE)
+    result, timing = time_func(run, f"Rscript ./models/RFavg.r {taskid} {args.cores}", shell=True, stdin=PIPE, stdout=PIPE)
+    timelog(f"predict:rf:{timing}\n", timefile, mode=args.timing)
 except BaseException:
     geneErrorLog("The error occurred when using the Random Forest Ensemble model.")
     sys.exit(0)
 taskprogress(85)
 try:
-    run(f"Rscript ./models/XGBavg.r {taskid} {args.cores}", shell=True, stdin=PIPE, stdout=PIPE)
+    result, timing = time_func(run, f"Rscript ./models/XGBavg.r {taskid} {args.cores}", shell=True, stdin=PIPE, stdout=PIPE)
+    timelog(f"predict:xgb:{timing}\n", timefile, mode=args.timing)
 except BaseException:
     geneErrorLog("The error occurred when using the XGBoost Ensemble model.")
     sys.exit(0)
 taskprogress(95)
-# if not (os.path.exists(wd+"SVMavg.csv") and os.path.exists(wd+"RFavg.csv") and os.path.exists(wd+"XGBavg.csv")):
-#     geneErrorLog("The error occurred after all the ensemble models were constructed.")
 try:
     SVMavgresultlist = csv2list(wd + "SVMavg.csv")
     RFavgresultlist = csv2list(wd + "RFavg.csv")
@@ -231,6 +248,4 @@ try:
 except BaseException:
     geneErrorLog("The error occurred after all the constructed.")
     sys.exit(0)
-# if not (os.path.exists(wd+"result.html")):
-#     geneErrorLog("The error occurred after all the constructed.")
 taskprogress(100)
