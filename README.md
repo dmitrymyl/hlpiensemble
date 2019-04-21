@@ -12,6 +12,9 @@ R::caret | 6.0.82
 R::randomForest | 4.6.14
 R::xgboost | 0.82.1
 R::kernlab | 0.9.26
+R::doParallel | 1.0.14
+R::foreach | 1.4.4
+R::iterators | 1.0.9
 
 Currently, the package works only under UNIX.
  
@@ -45,8 +48,31 @@ If one consider parallel execution of hlpiensemble.py script, one should be awar
 ## Output
 The output is `.csv` file containing probabilities of interaction predicted by each algorithm for each pair of RNA and protein.
 
+## Time complexity
+
+### Testing scheme
+It is tested how the length of RNA and protein, the number of sequences and number of cores influence performance.
+For length, 5 RNAs and 5 proteins are generated with length from 100 to 1000 with step 100, i.e. 10 RNA files and 10 protein files. Then all-to-all runs are performed, i.e. 100 runs.
+For number, 1 to 10 RNAs and proteins of length of 100 are generated and all-to-all runs are performed, i.e. 100 runs.
+For parallel processing, 10 RNAs of length of 100 and 10 proteins of length of 100 are taken and then processed with 1 to 10 cores, i.e. 10 runs.
+
+### How to reproduce testing
+For evaluating execution time one has to generate sequence samples, test them and process results. To do so, one has to do following from the package directory:
+```
+cd time_samples
+bash generate_samples.sh
+cd ../time_results
+bash length.sh
+bash number.sh
+bash parallel.sh
+```
+After execution one has to run `time_results/time_results.ipynb` notebook to produce plots.
+
+### Results
+Due to 1 run per case there is lack of data and inconsistent results on time performance. It seems like length of sequences and their number do not influence execution time. However, running multiple cores in R negatively influences performance due to costs of parallelism applied.
+
 ## Contributions
-The initial author Fule Liu developed most of the prediction backend. [@dmitrymyl](https://github.com/dmitrymyl) adopted [web server](http://ccsipb.lnu.edu.cn/hlpiensemble/index.php) to CLI usage, including paths tweaks and master script.
+The initial author Fule Liu developed most of the prediction backend. [@dmitrymyl](https://github.com/dmitrymyl) adopted [web server](http://ccsipb.lnu.edu.cn/hlpiensemble/index.php) to CLI usage, including paths tweaks and master script, parallelism and time testing.
 
 ## Citation
 Please cite **Huan Hu, Li Zhang, Haixin Ai, Hui Zhang, Yetian Fan, Qi Zhao & Hongsheng Liu (2018) HLPI-Ensemble: Prediction of human lncRNA-protein interactions based on ensemble strategy, RNA Biology, 15:6, 797-806, DOI: 10.1080/15476286.2018.1457935** in your paper if you use this software.
