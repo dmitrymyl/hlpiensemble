@@ -16,13 +16,12 @@ R::doParallel | 1.0.14
 R::foreach | 1.4.4
 R::iterators | 1.0.9
 
-Currently, the package works only under UNIX.
+Currently, the package works only under UNIX. Windows users should suggest using WSL or Cygwin.
  
 ## Usage
-The master script is `hlpiensemble.py` that allows one to run prediction from any directory. For instance, in UNIX one should do as follows:
+The master script is `hlpiensemble.py` that allows one to run prediction from any directory. One should do as follows:
 ```
-export PATH=path/to/hlpiensemble:$PATH
-python3 hlpiensemble.py -rna rna.fasta -protein protein.fasta -mode result -output here.csv -taskname some_task
+python3 path/to/repo/hlpiensemble.py -rna rna.fasta -protein protein.fasta -mode result -output here.csv -taskname some_task
 ```
 Command line arguments are:
 
@@ -37,7 +36,7 @@ argument|type|description|default
 --timing|optional|Whether to profile execution time or not|False
 
 ## How predictions are made
-The training dataset was NPInter v2.0 database of lncRNA-protein interactions. Several features are excluded from sequences and then applied to
+The training dataset was NPInter v2.0 database of lncRNA-protein interactions. Several features (named pse, kmer and acc) are exctracted from sequences and then applied to
 three mainstream algorithms: RF, SVM, XGBoost.
 
 ## Execution scheme
