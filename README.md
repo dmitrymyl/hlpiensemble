@@ -18,6 +18,13 @@ R::iterators | 1.0.9
 
 Currently, the package works only under UNIX. Windows users should suggest using WSL or Cygwin.
  
+## Installation
+One needs `git >= 1.8.2` and `git-lfs` installed to deal with large binaries at models/*.Rdata. Run
+```
+git clone https://github.com/dmitrymyl/hlpiensemble.git
+```
+and files will be fetched via `git` and `git lfs`. After that, the package is ready for usage.
+
 ## Usage
 The master script is `hlpiensemble.py` that allows one to run prediction from any directory. One should do as follows:
 ```
