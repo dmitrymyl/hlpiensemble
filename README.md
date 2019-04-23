@@ -19,7 +19,7 @@ R::iterators | 1.0.9
 Currently, the package works only under UNIX. Windows users should suggest using WSL or Cygwin.
  
 ## Installation
-One needs `git >= 1.8.2` and `git-lfs` installed to deal with large binaries at models/*.Rdata. Run
+One needs `git >= 1.8.2` and `git-lfs` to be installed to deal with large binaries at `models/*.Rdata`. Run
 ```
 git clone https://github.com/dmitrymyl/hlpiensemble.git
 ```
